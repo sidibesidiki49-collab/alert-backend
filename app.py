@@ -2,13 +2,33 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import sqlite3
 from datetime import datetime
-from db import init_db
+import os
 
 app = Flask(__name__)
 CORS(app)
 
+# 📦 Initialisation base de données
+def init_db():
+    conn = sqlite3.connect("alerts.db")
+    c = conn.cursor()
+
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS alerts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        type TEXT,
+        message TEXT,
+        latitude TEXT,
+        longitude TEXT,
+        date TEXT
+    )
+    """)
+
+    conn.commit()
+    conn.close()
+
 init_db()
 
+# 🚨 Route pour créer une alerte
 @app.route("/alert", methods=["POST"])
 def create_alert():
     data = request.json
@@ -20,10 +40,10 @@ def create_alert():
     INSERT INTO alerts (type, message, latitude, longitude, date)
     VALUES (?, ?, ?, ?, ?)
     """, (
-        data["type"],
-        data["message"],
-        data["lat"],
-        data["lng"],
+        data.get("type"),
+        data.get("message"),
+        data.get("lat"),
+        data.get("lng"),
         datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     ))
 
@@ -33,6 +53,7 @@ def create_alert():
     return jsonify({"status": "ok"})
 
 
+# 📊 Route pour récupérer les alertes
 @app.route("/alerts", methods=["GET"])
 def get_alerts():
     conn = sqlite3.connect("alerts.db")
@@ -46,5 +67,13 @@ def get_alerts():
     return jsonify(rows)
 
 
+# 🟢 Route test
+@app.route("/")
+def home():
+    return "API ALERT BACKEND RUNNING"
+
+
+# 🚀 Lancement compatible Render
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
