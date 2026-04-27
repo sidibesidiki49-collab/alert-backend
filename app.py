@@ -41,16 +41,30 @@ init_db()
 
 
 # 🔑 TOKEN GOOGLE
+import json
+
 def get_access_token():
-    credentials = service_account.Credentials.from_service_account_file(
-        "serviceAccountKey.json",
-        scopes=["https://www.googleapis.com/auth/firebase.messaging"]
-    )
+    try:
+        raw = os.environ.get("GOOGLE_CREDENTIALS")
 
-    request = google.auth.transport.requests.Request()
-    credentials.refresh(request)
+        if not raw:
+            raise Exception("VARIABLE GOOGLE_CREDENTIALS MANQUANTE")
 
-    return credentials.token
+        credentials_info = json.loads(raw)
+
+        credentials = service_account.Credentials.from_service_account_info(
+            credentials_info,
+            scopes=["https://www.googleapis.com/auth/firebase.messaging"]
+        )
+
+        request = google.auth.transport.requests.Request()
+        credentials.refresh(request)
+
+        return credentials.token
+
+    except Exception as e:
+        print("ERREUR TOKEN:", str(e))
+        raise
 
 
 # 🔔 ENVOI NOTIFICATION
@@ -134,12 +148,16 @@ def get_alerts():
 # 🧪 TEST
 @app.route("/test-alert")
 def test_alert():
-    send_notification(
-        CHEF_TOKEN,
-        "🚨 TEST ZEUS",
-        "Notification OK 🔥"
-    )
-    return "Notification envoyée"
+    try:
+        send_notification(
+            CHEF_TOKEN,
+            "🚨 TEST ZEUS",
+            "Notification OK 🔥"
+        )
+        return "Notification envoyée"
+
+    except Exception as e:
+        return f"ERREUR: {str(e)}"
 
 
 # 🟢 HOME
