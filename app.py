@@ -55,27 +55,33 @@ def get_access_token():
 
 # 🔔 ENVOI NOTIFICATION
 def send_notification(token, title, body):
-    access_token = get_access_token()
+    try:
+        access_token = get_access_token()
 
-    url = f"https://fcm.googleapis.com/v1/projects/{PROJECT_ID}/messages:send"
+        url = f"https://fcm.googleapis.com/v1/projects/{PROJECT_ID}/messages:send"
 
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json"
-    }
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json"
+        }
 
-    data = {
-        "message": {
-            "token": token,
-            "notification": {
-                "title": title,
-                "body": body
+        data = {
+            "message": {
+                "token": token,
+                "notification": {
+                    "title": title,
+                    "body": body
+                }
             }
         }
-    }
 
-    response = requests.post(url, json=data, headers=headers)
-    print("FCM RESPONSE:", response.text)
+        response = requests.post(url, json=data, headers=headers)
+
+        print("STATUS:", response.status_code)
+        print("RESPONSE:", response.text)
+
+    except Exception as e:
+        print("ERREUR FCM:", str(e))
 
 
 # 🚨 CREATE ALERT
