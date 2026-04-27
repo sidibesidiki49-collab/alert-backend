@@ -63,7 +63,10 @@ def get_access_token():
 
 # 🔔 ENVOI NOTIFICATION
 def send_notification(token, title, body):
+    print("== SEND NOTIF START ==")
+
     access_token = get_access_token()
+    print("ACCESS TOKEN OK")
 
     url = f"https://fcm.googleapis.com/v1/projects/{PROJECT_ID}/messages:send"
 
@@ -123,7 +126,17 @@ def create_alert():
 # 🧪 TEST
 @app.route("/test-alert")
 def test_alert():
-    return "TEST OK SANS FIREBASE"
+    try:
+        send_notification(
+            CHEF_TOKEN,
+            "🚨 TEST ZEUS",
+            "Notification OK 🔥"
+        )
+        return "OK"
+
+    except Exception as e:
+        import traceback
+        return f"ERREUR:\n{traceback.format_exc()}", 500
 
 
 # 📊 GET ALERTS
