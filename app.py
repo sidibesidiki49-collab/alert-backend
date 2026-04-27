@@ -43,15 +43,8 @@ init_db()
 
 # 🔑 TOKEN GOOGLE (Render ENV)
 def get_access_token():
-    raw = os.environ.get("GOOGLE_CREDENTIALS")
-
-    if not raw:
-        raise Exception("GOOGLE_CREDENTIALS manquant")
-
-    credentials_info = json.loads(raw)
-
-    credentials = service_account.Credentials.from_service_account_info(
-        credentials_info,
+    credentials = service_account.Credentials.from_service_account_file(
+        "/etc/secrets/serviceAccountKey.json",
         scopes=["https://www.googleapis.com/auth/firebase.messaging"]
     )
 
