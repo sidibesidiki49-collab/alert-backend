@@ -123,12 +123,7 @@ def create_alert():
 # 🧪 TEST
 @app.route("/test-alert")
 def test_alert():
-    send_notification(
-        CHEF_TOKEN,
-        "🚨 TEST ZEUS",
-        "Notification OK 🔥"
-    )
-    return "Notification envoyée"
+    return "TEST OK SANS FIREBASE"
 
 
 # 📊 GET ALERTS
