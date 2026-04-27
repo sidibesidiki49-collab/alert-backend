@@ -4,6 +4,7 @@ import sqlite3
 from datetime import datetime
 import os
 import requests
+import json
 
 from google.oauth2 import service_account
 import google.auth.transport.requests
@@ -11,14 +12,14 @@ import google.auth.transport.requests
 app = Flask(__name__)
 CORS(app)
 
-# 🔥 TON TOKEN CHEF (déjà inséré)
-CHEF_TOKEN = "eN_cEYaRRgOL3MWCyzIGcJ:APA91bFL407Eyce3M2BvrQSMasPGpkeRR9UCpOj-HW_jZXYdgEe-hdeu_PxqJPBjWBujbdKof8goS7y6-szm_jRI4a9gIPJF40X8ZzDJos6_y0zODsbcQWE"
+# 🔥 TOKEN CHEF (NOUVEAU)
+CHEF_TOKEN = "eiprXF--RIa0CFZEesQsfh:APA91bHiyXuBLv1stqyYYeYNjyDfS7IB-pEqewIVDEHow4_DAgbg5GmK8BH4VJ7B7Ny0D2hWEfaCcPo8IZNz7bbRM-A0e5gYEwbp2sZXBngW9avcKw_ff8w"
 
-# 🔥 TON PROJECT ID
+# 🔥 PROJECT ID
 PROJECT_ID = "zeusalert-229fc"
 
 
-# 📦 INIT DB
+# 📦 DB INIT
 def init_db():
     conn = sqlite3.connect("alerts.db")
     c = conn.cursor()
@@ -40,62 +41,51 @@ def init_db():
 init_db()
 
 
-# 🔑 TOKEN GOOGLE
-import json
-
+# 🔑 TOKEN GOOGLE (Render ENV)
 def get_access_token():
-    try:
-        raw = os.environ.get("GOOGLE_CREDENTIALS")
+    raw = os.environ.get("GOOGLE_CREDENTIALS")
 
-        if not raw:
-            raise Exception("VARIABLE GOOGLE_CREDENTIALS MANQUANTE")
+    if not raw:
+        raise Exception("GOOGLE_CREDENTIALS manquant")
 
-        credentials_info = json.loads(raw)
+    credentials_info = json.loads(raw)
 
-        credentials = service_account.Credentials.from_service_account_info(
-            credentials_info,
-            scopes=["https://www.googleapis.com/auth/firebase.messaging"]
-        )
+    credentials = service_account.Credentials.from_service_account_info(
+        credentials_info,
+        scopes=["https://www.googleapis.com/auth/firebase.messaging"]
+    )
 
-        request = google.auth.transport.requests.Request()
-        credentials.refresh(request)
+    request = google.auth.transport.requests.Request()
+    credentials.refresh(request)
 
-        return credentials.token
-
-    except Exception as e:
-        print("ERREUR TOKEN:", str(e))
-        raise
+    return credentials.token
 
 
 # 🔔 ENVOI NOTIFICATION
 def send_notification(token, title, body):
-    try:
-        access_token = get_access_token()
+    access_token = get_access_token()
 
-        url = f"https://fcm.googleapis.com/v1/projects/{PROJECT_ID}/messages:send"
+    url = f"https://fcm.googleapis.com/v1/projects/{PROJECT_ID}/messages:send"
 
-        headers = {
-            "Authorization": f"Bearer {access_token}",
-            "Content-Type": "application/json"
-        }
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json"
+    }
 
-        data = {
-            "message": {
-                "token": token,
-                "notification": {
-                    "title": title,
-                    "body": body
-                }
+    data = {
+        "message": {
+            "token": token,
+            "notification": {
+                "title": title,
+                "body": body
             }
         }
+    }
 
-        response = requests.post(url, json=data, headers=headers)
+    response = requests.post(url, json=data, headers=headers)
 
-        print("STATUS:", response.status_code)
-        print("RESPONSE:", response.text)
-
-    except Exception as e:
-        print("ERREUR FCM:", str(e))
+    print("STATUS:", response.status_code)
+    print("RESPONSE:", response.text)
 
 
 # 🚨 CREATE ALERT
@@ -121,7 +111,6 @@ def create_alert():
     conn.commit()
     conn.close()
 
-    # 🔥 ENVOI NOTIFICATION
     send_notification(
         CHEF_TOKEN,
         "🚨 ALERTE ZEUS",
@@ -129,6 +118,17 @@ def create_alert():
     )
 
     return jsonify({"status": "alerte envoyée"})
+
+
+# 🧪 TEST
+@app.route("/test-alert")
+def test_alert():
+    send_notification(
+        CHEF_TOKEN,
+        "🚨 TEST ZEUS",
+        "Notification OK 🔥"
+    )
+    return "Notification envoyée"
 
 
 # 📊 GET ALERTS
@@ -143,21 +143,6 @@ def get_alerts():
     conn.close()
 
     return jsonify(rows)
-
-
-# 🧪 TEST
-@app.route("/test-alert")
-def test_alert():
-    try:
-        send_notification(
-            CHEF_TOKEN,
-            "🚨 TEST ZEUS",
-            "Notification OK 🔥"
-        )
-        return "Notification envoyée"
-
-    except Exception as e:
-        return f"ERREUR: {str(e)}"
 
 
 # 🟢 HOME
